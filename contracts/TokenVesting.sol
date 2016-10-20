@@ -99,15 +99,39 @@ contract StandardToken is Token {
 
 }
 
+/*
+Token Vesting contract
+
+A vesting contract that holds ERC20 coins and vests them over time.
+
+(start)
+>>>freezePeriod>>>(initalAmount released)
+>>>period>>>(amount released)
+>>>period>>>(amount released)
+(this repeats until my coinbalance < amount )
+>>>period>>>()
+(end)
+
+example:
+TokenVesting(<destination address>, 40000, 30 , 2000, 10, <token address>)
+
+waits 40000 blocks to release the first 30 tokens ( by calling initial() )
+then waits 2000 blocks to release 10 tokens ( by calling vest() )
+..etc..
+
+*/
 
 
 contract TokenVesting {
 	address public tokenRecepient;		// recepient of the tokens
 	uint public freezePeriod;					// # blocks to wait before enable initial vesting
-	uint256 public initialAmount;			// tokens released at initial vesting
-	uint256 public amount;						// tokens that can be vested in each period
+	uint public initialAmount;			// tokens released at initial vesting ( in percent )
+	uint public amount;						// tokens that can be vested in each period  ( in percent )
   uint public period;								// length of period ( in blocks ) 
     
+    uint256 public initialVestAmount; 
+    uint256 public vestAmount;
+
 	uint public vestingStartBlock;		// blocknumber where recepient activated the contract
 	uint public initialVestingBlock;	// blocknumner where initial vestig occured
 	uint public nextVestingBlock;			// blocknumber where next vesting can occur
@@ -116,7 +140,9 @@ contract TokenVesting {
 
 	event Vested(uint256 amount);
 
-	function TokenVesting(address _tokenRecepient, uint _freezePeriod, uint256 _initialAmount, uint256 _amount, uint _period, address _tokenContract){
+	function TokenVesting(address _tokenRecepient, uint _freezePeriod, uint _initialAmount, uint _period,  uint _amount,address _tokenContract){
+        // percentages should be between 0 and 100 inclusive
+        if (_initialAmount == 0 || _amount == 0 || _initialAmount > 100 || _amount > 100) throw;
 		tokenRecepient = _tokenRecepient;
 		initialAmount = _initialAmount;
 		freezePeriod = _freezePeriod;
@@ -133,6 +159,8 @@ contract TokenVesting {
 		if (msg.sender != tokenRecepient) throw;
 		if (nextVestingBlock != 0x0) throw;
 		nextVestingBlock = block.number + freezePeriod;
+        initialVestAmount = token.balanceOf(this) * initialAmount / 100;
+        vestAmount = token.balanceOf(this) * amount / 100;
 	}
 
 	// request initial vesting
@@ -143,28 +171,29 @@ contract TokenVesting {
 		if (initialVestingBlock != 0x0) throw;
 		// check if it's not too early for the initial vesting to occur ?
 		if (nextVestingBlock < block.number) throw;
-		sendTokens(initialAmount);
+		// send tokens and set next vesting block
 		initialVestingBlock = block.number;
 		nextVestingBlock = block.number + period;		
+		sendTokens(initialVestAmount);
 	}
 
 	function vest(){
 		if (msg.sender != tokenRecepient) throw;
 		if (initialVestingBlock == 0x0) throw;
 		if (nextVestingBlock < block.number) throw;
-		sendTokens(amount);
+		sendTokens(vestAmount);
 		nextVestingBlock = block.number + period;
 	}
 
 
-	function sendTokens(uint256 amount) private {
-	    uint256 vestAmount = amount;
-		if (token.balanceOf(this) < amount )
+	function sendTokens(uint256 _amount) private {
+	    uint256 vestAmount = _amount;
+		if (token.balanceOf(this) < _amount )
 		{
-		    // only send remaining tokens
+		    // only send remaining tokens ( rounding errors )
 		    vestAmount = token.balanceOf(this);
 		}
-		// send 'amount' tokens
+		// send '_amount' tokens
 		token.transfer(tokenRecepient,vestAmount);
 		Vested(vestAmount);
 	}
