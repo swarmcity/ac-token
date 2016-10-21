@@ -153,6 +153,7 @@ contract ARCToken is StandardToken, SafeMath {
     address public founder = 0x0;
     address public developer = 0x0;
     address public rewards = 0x0;
+    bool public rewardAddressesSet = false;
 
     address public owner = 0x0;
 
@@ -175,9 +176,12 @@ contract ARCToken is StandardToken, SafeMath {
     }
 
     function setRewardAddresses(address founderInput, address developerInput, address rewardsInput){
+        if (msg.sender != owner) throw;
+        if (rewardAddressesSet == true) throw;
         founder = founderInput;
         developer = developerInput;
         rewards = rewardsInput;
+        rewardAddressesSet = true;
     }
 
     function price() constant returns(uint) {
