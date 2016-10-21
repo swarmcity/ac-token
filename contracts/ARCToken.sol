@@ -177,7 +177,7 @@ contract ARCToken is StandardToken, SafeMath {
 
     function setRewardAddresses(address founderInput, address developerInput, address rewardsInput){
         if (msg.sender != owner) throw;
-        if (rewardAddressesSet == true) throw;
+        if (rewardAddressesSet) throw;
         founder = founderInput;
         developer = developerInput;
         rewards = rewardsInput;
@@ -255,10 +255,13 @@ contract ARCToken is StandardToken, SafeMath {
         if (block.number <= endBlock ) throw;
         if (allocated) throw;
         presaleTokenSupply = totalSupply;
+        // total token allocations add up to 16% of total coins, so formula is reward=allocation_in_percent/84 .
         balances[founder] = safeAdd(balances[founder], presaleTokenSupply * founderAllocation / 84 );
         totalSupply = safeAdd(totalSupply, presaleTokenSupply * founderAllocation / 84);
+        
         balances[developer] = safeAdd(balances[developer], presaleTokenSupply * developerAllocation / 84);
         totalSupply = safeAdd(totalSupply, presaleTokenSupply * developerAllocation / 84);
+        
         balances[rewards] = safeAdd(balances[rewards], presaleTokenSupply * rewardsAllocation / 84);
         totalSupply = safeAdd(totalSupply, presaleTokenSupply * rewardsAllocation / 84);
 
