@@ -12,6 +12,10 @@ You will need the truffle framework to run the tests
 
 ## Testing
 
+First start the testRPC suite in another terminal
+
+```testrpc```
+
 Running the unit tests will check the workings of the ARCToken.sol contract and the TokenVesting.sol contract.
 
 ```truffle test```
