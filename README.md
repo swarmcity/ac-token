@@ -5,7 +5,9 @@ This repo contains the Token contract for the ARC token, including the coinsale
 ## Prerequisites
 
 You will need the truffle framework to run the tests
+
 ```npm install -g truffle```
+
 ```npm install -g testrpc```
 
 ## Testing
