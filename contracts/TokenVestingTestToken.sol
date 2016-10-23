@@ -1,4 +1,34 @@
 /**
+ * Overflow aware uint math functions.
+ *
+ * Inspired by https://github.com/MakerDAO/maker-otc/blob/master/contracts/simple_market.sol
+ */
+contract SafeMath {
+  //internals
+
+  function safeMul(uint a, uint b) internal returns (uint) {
+    uint c = a * b;
+    assert(a == 0 || c / a == b);
+    return c;
+  }
+
+  function safeSub(uint a, uint b) internal returns (uint) {
+    assert(b <= a);
+    return a - b;
+  }
+
+  function safeAdd(uint a, uint b) internal returns (uint) {
+    uint c = a + b;
+    assert(c>=a && c>=b);
+    return c;
+  }
+
+  function assert(bool assertion) internal {
+    if (!assertion) throw;
+  }
+}
+
+/**
  * ERC 20 token
  *
  * https://github.com/ethereum/EIPs/issues/20
@@ -99,102 +129,23 @@ contract StandardToken is Token {
 
 }
 
-/*
-Token Vesting contract
+contract TokenVestingTestToken is StandardToken,SafeMath {
 
-A vesting contract that holds ERC20 coins and vests them over time.
+  function TokenVestingTestToken(){
 
-(start)
->>>freezePeriod>>>(initalAmount released)
->>>period>>>(amount released)
->>>period>>>(amount released)
-(this repeats until my coinbalance < amount )
->>>period>>>()
-(end)
+  }
 
-example:
-TokenVesting(<destination address>, 40000, 30 , 2000, 10, <token address>)
+  // mint tokens for testing vesting these tokens afterwards
+  function mintToken(address recipient,uint _amount){
+    balances[recipient] = safeAdd(balances[recipient], _amount);
+  }
 
-waits 40000 blocks to release the first 30 tokens ( by calling initial() )
-then waits 2000 blocks to release 10 tokens ( by calling vest() )
-..etc..
+  // do nothing
+  function noop(){
 
-*/
+  }
 
-
-contract TokenVesting {
-	address public tokenRecepient;		// recepient of the tokens
-	uint public freezePeriod;					// # blocks to wait before enable initial vesting
-	uint public initialAmount;			// tokens released at initial vesting ( in percent )
-	uint public amount;						// tokens that can be vested in each period  ( in percent )
-  uint public period;								// length of period ( in blocks ) 
-    
-    uint256 public initialVestAmount; 
-    uint256 public vestAmount;
-
-	uint public vestingStartBlock;		// blocknumber where recepient activated the contract
-	uint public initialVestingBlock;	// blocknumner where initial vestig occured
-	uint public nextVestingBlock;			// blocknumber where next vesting can occur
-
-	StandardToken token;
-
-	event Vested(uint256 amount);
-
-	function TokenVesting(address _tokenRecepient, uint _freezePeriod, uint _initialAmount, uint _period,  uint _amount,address _tokenContract){
-        // percentages should be between 0 and 100 inclusive
-        if (_initialAmount == 0 || _amount == 0 || _initialAmount > 100 || _amount > 100) throw;
-		tokenRecepient = _tokenRecepient;
-		initialAmount = _initialAmount;
-		freezePeriod = _freezePeriod;
-		amount = _amount;
-		period = _period;
-		token = StandardToken(_tokenContract);
-	}
-
-	// Activate the vesting - aka start the frozenblocks countdown
-	function activate(){
-		// you can only activate the vesting contract ( aka start the freeze period )
-		// when there is a token balance on this contract
-		if (token.balanceOf(this) <= 0) throw;
-		if (msg.sender != tokenRecepient) throw;
-		if (nextVestingBlock != 0x0) throw;
-		nextVestingBlock = block.number + freezePeriod;
-        initialVestAmount = token.balanceOf(this) * initialAmount / 100;
-        vestAmount = token.balanceOf(this) * amount / 100;
-	}
-
-	// request initial vesting
-	function initial(){
-		// only recepient can request 
-		if (msg.sender != tokenRecepient) throw;
-		// did you already call the initial vesting function ?
-		if (initialVestingBlock != 0x0) throw;
-		// check if it's not too early for the initial vesting to occur ?
-		if (nextVestingBlock > block.number) throw;
-		// send tokens and set next vesting block
-		initialVestingBlock = block.number;
-		nextVestingBlock = block.number + period;		
-		sendTokens(initialVestAmount);
-	}
-
-	function vest(){
-		if (msg.sender != tokenRecepient) throw;
-		if (initialVestingBlock == 0x0) throw;
-		if (nextVestingBlock > block.number) throw;
-		sendTokens(vestAmount);
-		nextVestingBlock = block.number + period;
-	}
-
-
-	function sendTokens(uint256 _amount) private {
-	    uint256 vestAmount = _amount;
-		if (token.balanceOf(this) < _amount )
-		{
-		    // only send remaining tokens ( rounding errors )
-		    vestAmount = token.balanceOf(this);
-		}
-		// send '_amount' tokens
-		token.transfer(tokenRecepient,vestAmount);
-		Vested(vestAmount);
-	}
 }
+
+
+
