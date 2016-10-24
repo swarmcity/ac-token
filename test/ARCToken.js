@@ -36,22 +36,34 @@ contract('ARCToken', function(accounts) {
       });
     });
 
-    it("founder address should match", function(done) {
+    it("founder address/balance should match", function(done) {
       arctokencontract.founder().then(function(q) {
         assert.equal(q, self.web3.toHex(founder_address), "founder addres does not match");
-        done();
+
+        arctokencontract.balanceOf.call(founder_address).then(function(balance) {
+          assert.equal(balance.valueOf(), 0);
+          done();
+        });
+
       });
     });
     it("developer address should match", function(done) {
       arctokencontract.developer().then(function(q) {
         assert.equal(q, self.web3.toHex(developer_address), "developer addres does not match");
-        done();
+        arctokencontract.balanceOf.call(developer_address).then(function(balance) {
+          assert.equal(balance.valueOf(), 0);
+          done();
+        });
+
       });
     });
-    it("rewards address should be filled in", function(done) {
+    it("rewards address/balance should match", function(done) {
       arctokencontract.rewards().then(function(q) {
         assert.equal(q, self.web3.toHex(rewards_address), "rewards addres does not match");
-        done();
+        arctokencontract.balanceOf.call(rewards_address).then(function(balance) {
+          assert.equal(balance.valueOf(), 0);
+          done();
+        });
       });
     });
   });
@@ -173,13 +185,18 @@ contract('ARCToken', function(accounts) {
       skipblocks(2, done);
     });
 
+
+
     it("should accept ETH and mint tokens", function(done) {
+
+      console.log('tokenbuyer ETH balance=', self.web3.fromWei(self.web3.eth.getBalance(token_buyer), 'ether').toNumber());
+
       self.web3.eth.sendTransaction({
         from: token_buyer,
         to: arctokencontract.address,
         value: 1e18,
       }, function(r, s) {
-         try {
+        try {
           done();
         } catch (e) {
           assert.fail('this function should not throw');
@@ -189,6 +206,7 @@ contract('ARCToken', function(accounts) {
     });
 
     it("token_buyer should have 125 ARC tokens", function(done) {
+      console.log('tokenbuyer ETH balance=', self.web3.fromWei(self.web3.eth.getBalance(token_buyer), 'ether').toNumber());
       return arctokencontract.balanceOf.call(token_buyer).then(function(balance) {
         assert.equal(balance.valueOf(), 125e18, "purchase did not work");
         done();
@@ -197,11 +215,160 @@ contract('ARCToken', function(accounts) {
 
 
 
+    it("token owner should not be able to call allocateTokens yet", function(done) {
+      arctokencontract.allocateTokens({
+          from: accounts[0]
+        })
+        .then(function() {
+          assert.fail('this function should throw');
+          done();
+        })
+        .catch(function(e) {
+
+          done();
+        });
+    });
+
+    it("buying more tokens than ethercap should not be possible", function(done) {
+
+      console.log('tokenbuyer ETH balance=', self.web3.fromWei(self.web3.eth.getBalance(token_buyer), 'ether').toNumber());
+
+      self.web3.eth.sendTransaction({
+        from: token_buyer,
+        to: arctokencontract.address,
+        value: 60e18,
+      }, function(r, s) {
+        try {
+          assert.fail('this function should throw');
+          done();
+        } catch (e) {
+          done();
+        }
+      });
+    });
+
+    it("token_buyer should still have 125 ARC tokens", function(done) {
+      return arctokencontract.balanceOf.call(token_buyer).then(function(balance) {
+        assert.equal(balance.valueOf(), 125e18);
+        done();
+      });
+    });
+
+    it("buying exactly the tokens up to the ethercap should be possible", function(done) {
+
+      console.log('tokenbuyer ETH balance=', self.web3.fromWei(self.web3.eth.getBalance(token_buyer), 'ether').toNumber());
+
+
+      arctokencontract.etherCap().then(function(etherCap) {
+        arctokencontract.presaleEtherRaised().then(function(presaleEtherRaised) {
+          var remaining = etherCap - presaleEtherRaised;
+          console.log('Buying in for', remaining);
+
+          assert(self.web3.eth.getBalance(token_buyer) > remaining,'Balance of buyer too low to buy all tokens. (restart testRPC?)');
+
+          self.web3.eth.sendTransaction({
+            from: token_buyer,
+            to: arctokencontract.address,
+            value: remaining,
+          }, function(r, s) {
+            try {
+              done();
+            } catch (e) {
+              assert.fail('this function should not throw');
+              done();
+            }
+          });
+        });
+
+      });
+    });
+
+
+    it("buying more tokens should not be possible", function(done) {
+      console.log('tokenbuyer ETH balance=', self.web3.fromWei(self.web3.eth.getBalance(token_buyer), 'ether').toNumber());
+      self.web3.eth.sendTransaction({
+        from: token_buyer,
+        to: arctokencontract.address,
+        value: 1e18,
+      }, function(r, s) {
+        try {
+          assert.fail('this function should throw');
+          done();
+        } catch (e) {
+          done();
+        }
+      });
+    });
+  });
+
+
+  describe('Post-coinsale test', function() {
+
+    it("founder_address should have 0 ARC tokens", function(done) {
+      return arctokencontract.balanceOf.call(founder_address).then(function(balance) {
+        assert.equal(balance.valueOf(), 0, "account not empty: " + self.web3.fromWei(balance.valueOf(), 'ether'));
+        done();
+      });
+    });
+
+
+    it("Check presaleEtherRaised == etherCap", function(done) {
+      arctokencontract.etherCap().then(function(etherCap) {
+        arctokencontract.presaleEtherRaised().then(function(presaleEtherRaised) {
+          console.log('Ether raised so far:', self.web3.fromWei(presaleEtherRaised, 'ether').toNumber())
+          console.log('Ether cap :', self.web3.fromWei(etherCap, 'ether').toNumber())
+          assert.equal(presaleEtherRaised.toNumber(),etherCap.toNumber());
+          done();
+        });
+      });
+    });
+
+
+    it("calling allocateTokens should not be possible by random account", function(done) {
+      arctokencontract.allocateTokens({
+          from: accounts[6]
+        })
+        .then(function() {
+          assert.fail('this function should throw');
+          done();
+        })
+        .catch(function(e) {
+          done();
+        });
+    });
+
+    it("founder_address should have 0 ARC tokens", function(done) {
+      return arctokencontract.balanceOf.call(founder_address).then(function(balance) {
+        assert.equal(balance.valueOf(), 0, "account not empty");
+        done();
+      });
+    });
+
+    it("calling allocateTokens should be possible by creator", function(done) {
+      arctokencontract.allocateTokens({
+          from: accounts[0]
+        })
+        .then(function() {
+          done();
+        })
+        .catch(function(e) {
+          assert.fail('this function should not throw');
+          done();
+        });
+    });
+
+    it("founder_address should now ARC tokens", function(done) {
+      return arctokencontract.balanceOf.call(founder_address).then(function(balance) {
+        assert.notEqual(balance.valueOf(), 0, "account not empty");
+        console.log('founder address has', self.web3.fromWei(balance.valueOf(),'ether'), 'ARC');
+        done();
+      });
+    });
+
+
   });
 
   function skipblocks(count, cb) {
-    //console.log('skipping',count,'blocks');
-    //console.log(self.web3.eth);
     self.web3.eth.sendTransaction({
       from: accounts[2],
       to: accounts[3],

@@ -158,7 +158,7 @@ contract ARCToken is StandardToken, SafeMath {
     address public owner = 0x0;
     bool public marketactive = false;
 
-    uint public etherCap = 672000 * 10**18; //max amount raised during crowdsale (8.5M USD worth of ether will be measured with a moving average market price at beginning of the crowdsale)
+    uint public etherCap = 50 * 10**18; //max amount raised during crowdsale (8.5M USD worth of ether will be measured with a moving average market price at beginning of the crowdsale)
     uint public rewardsAllocation = 2; //2% tokens allocated post-crowdsale for swarm rewards
     uint public developerAllocation = 6 ; //6% of token supply allocated post-crowdsale for the developer fund
     uint public founderAllocation = 8; //8% of token supply allocated post-crowdsale for the founder allocation
