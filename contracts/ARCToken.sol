@@ -156,6 +156,7 @@ contract ARCToken is StandardToken, SafeMath {
     bool public rewardAddressesSet = false;
 
     address public owner = 0x0;
+    bool public marketactive = false;
 
     uint public etherCap = 672000 * 10**18; //max amount raised during crowdsale (8.5M USD worth of ether will be measured with a moving average market price at beginning of the crowdsale)
     uint public rewardsAllocation = 2; //2% tokens allocated post-crowdsale for swarm rewards
@@ -252,7 +253,7 @@ contract ARCToken is StandardToken, SafeMath {
         if(founder == 0x0 || developer == 0x0 || rewards == 0x0) throw;
         // owner/founder/developer/rewards addresses can call this function
         if (msg.sender != owner && msg.sender != founder && msg.sender != developer && msg.sender != rewards ) throw;
-        if (block.number <= endBlock ) throw;
+        if (block.number <= endBlock && presaleEtherRaised < etherCap) throw;
         if (allocated) throw;
         presaleTokenSupply = totalSupply;
         // total token allocations add up to 16% of total coins, so formula is reward=allocation_in_percent/84 .
@@ -267,6 +268,17 @@ contract ARCToken is StandardToken, SafeMath {
 
         allocated = true;
 
+    }
+
+    /*
+        Market can be activated by the owner of the contract when coinsale sells out
+        before endblock is reached.
+    */
+    function activateMarket(){
+        if (msg.sender != owner) throw;
+        if (!allocated) throw;
+        if (block.number <= endBlock &&  presaleEtherRaised < etherCap) throw;
+        marketactive = true;
     }
 
     /**
@@ -339,11 +351,11 @@ contract ARCToken is StandardToken, SafeMath {
      *
      * Applicable tests:
      *
-     * - Test restricted early transfer
      * - Test transfer after restricted period
+     * - Test transfer after market activated
      */
     function transfer(address _to, uint256 _value) returns (bool success) {
-        if (block.number <= endBlock && msg.sender!=owner) throw;
+        if (block.number <= endBlock && marketactive == false) throw;
         return super.transfer(_to, _value);
     }
     /**
@@ -352,7 +364,7 @@ contract ARCToken is StandardToken, SafeMath {
      * Prevent transfers until token sale is over.
      */
     function transferFrom(address _from, address _to, uint256 _value) returns (bool success) {
-        if (block.number <= endBlock && msg.sender!=owner) throw;
+        if (block.number <= endBlock && marketactive == false) throw;
         return super.transferFrom(_from, _to, _value);
     }
 

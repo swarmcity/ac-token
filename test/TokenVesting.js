@@ -15,7 +15,7 @@ contract('TokenVesting', function(accounts) {
       from: accounts[2]
     }).then(function() {
       if (count == 0) {
-        console.log('at block', this.web3.eth.blockNumber);
+        console.log('at block', self.web3.eth.blockNumber);
         cb();
       } else {
         skipblocks(count - 1, cb);
