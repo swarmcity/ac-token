@@ -158,7 +158,7 @@ contract ARCToken is StandardToken, SafeMath {
     address public owner = 0x0;
     bool public marketactive = false;
 
-    uint public etherCap = 50 * 10**18; //max amount raised during crowdsale (8.5M USD worth of ether will be measured with a moving average market price at beginning of the crowdsale)
+    uint public etherCap = 672000 * 10**18; //max amount raised during crowdsale (8.5M USD worth of ether will be measured with a moving average market price at beginning of the crowdsale)
     uint public rewardsAllocation = 2; //2% tokens allocated post-crowdsale for swarm rewards
     uint public developerAllocation = 6 ; //6% of token supply allocated post-crowdsale for the developer fund
     uint public founderAllocation = 8; //8% of token supply allocated post-crowdsale for the founder allocation
@@ -230,7 +230,13 @@ contract ARCToken is StandardToken, SafeMath {
 
         if (!multisig.call.value(msg.value)()) throw; //immediately send Ether to multisig address
 
+        // if etherCap is reached - activate the market
+        if (presaleEtherRaised == etherCap && !marketactive){
+            marketactive = true;
+        }
+
         Buy(recipient, msg.value, tokens);
+
     }
 
     /**
@@ -253,6 +259,7 @@ contract ARCToken is StandardToken, SafeMath {
         if(founder == 0x0 || developer == 0x0 || rewards == 0x0) throw;
         // owner/founder/developer/rewards addresses can call this function
         if (msg.sender != owner && msg.sender != founder && msg.sender != developer && msg.sender != rewards ) throw;
+        // it should only continue if endBlock has passed OR presaleEtherRaised has not reached the cap yet
         if (block.number <= endBlock && presaleEtherRaised < etherCap) throw;
         if (allocated) throw;
         presaleTokenSupply = totalSupply;
@@ -268,17 +275,6 @@ contract ARCToken is StandardToken, SafeMath {
 
         allocated = true;
 
-    }
-
-    /*
-        Market can be activated by the owner of the contract when coinsale sells out
-        before endblock is reached.
-    */
-    function activateMarket(){
-        if (msg.sender != owner) throw;
-        if (!allocated) throw;
-        if (block.number <= endBlock &&  presaleEtherRaised < etherCap) throw;
-        marketactive = true;
     }
 
     /**
