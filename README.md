@@ -6,27 +6,40 @@ This repo contains the Token contract for the ARC token, including the coinsale
 
 You will need the truffle framework to run the tests
 
-```npm install -g truffle```
+```
+npm install -g truffle
+```
 
-```npm install -g testrpc```
+```
+npm install -g testrpc
+```
 
 ## Testing
 
 First start the testRPC suite in another terminal
 
-```testrpc```
+
+```
+testrpc
+```
 
 Running the unit tests will check the workings of the ARCToken.sol contract and the TokenVesting.sol contract.
 
-```truffle test```
+```
+truffle test
+```
 
 To run tests individually - run
 
-```truffle test ./test/TokenVesting.js```
+```
+truffle test ./test/TokenVesting.js
+```
 
 and
 
-```truffle test ./test/ARCToken.js```
+```
+truffle test ./test/ARCToken.js
+```
 
 # Contracts
 
