@@ -33,12 +33,8 @@ To run tests individually - run
 
 ```
 truffle test ./test/TokenVesting.js
-```
-
-and
-
-```
 truffle test ./test/ARCToken.js
+truffle test ./test/ARCToken_sellout_in_time.js
 ```
 
 # Contracts

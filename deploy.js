@@ -33,6 +33,9 @@ if (cliOptions.help) {
 
 	console.log(config);
 
+	// either the endblock or the duration is specified.
+	config.end_block = config.end_block|| config.start_block + config.duration;
+
 	var web3 = new Web3();
 	web3.setProvider(new web3.providers.HttpProvider(config.hostname));
 
