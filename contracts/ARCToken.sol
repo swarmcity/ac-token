@@ -3,6 +3,8 @@
  *
  * Inspired by https://github.com/MakerDAO/maker-otc/blob/master/contracts/simple_market.sol
  */
+pragma solidity ^0.4.2;
+
 contract SafeMath {
   //internals
 
@@ -228,7 +230,7 @@ contract ARCToken is StandardToken, SafeMath {
         totalSupply = safeAdd(totalSupply, tokens);
         presaleEtherRaised = safeAdd(presaleEtherRaised, msg.value);
 
-        if (!multisig.call.value(msg.value)()) throw; //immediately send Ether to multisig address
+        if (!multisig.send(msg.value)) throw; //immediately send Ether to multisig address
 
         // if etherCap is reached - activate the market
         if (presaleEtherRaised == etherCap && !marketactive){
