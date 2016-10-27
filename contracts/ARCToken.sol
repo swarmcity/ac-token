@@ -367,7 +367,7 @@ contract ARCToken is StandardToken, SafeMath {
     /**
      * Direct deposits buys tokens
      */
-    function() {
+    function() payable {
         buyRecipient(msg.sender);
     }
 
