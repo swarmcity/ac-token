@@ -187,14 +187,14 @@ contract TokenVesting {
 
 
 	function sendTokens(uint256 _amount) private {
-	    uint256 vestAmount = _amount;
+	    uint256 tokensToSend = _amount;
 		if (token.balanceOf(this) < _amount )
 		{
 		    // only send remaining tokens ( rounding errors )
-		    vestAmount = token.balanceOf(this);
+		    tokensToSend = token.balanceOf(this);
 		}
 		// send '_amount' tokens
-		token.transfer(tokenRecepient,vestAmount);
-		Vested(vestAmount);
+		token.transfer(tokenRecepient,tokensToSend);
+		Vested(tokensToSend);
 	}
 }
