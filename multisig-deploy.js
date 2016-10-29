@@ -73,6 +73,8 @@ if (cliOptions.help) {
 			var abi = JSON.parse(output.contracts[contractName].interface);
 			var bytecode = output.contracts[contractName].bytecode;
 
+
+
 			var contract = web3.eth.contract(abi);
 
 			if (cliOptions.send_immediately) {
@@ -81,7 +83,9 @@ if (cliOptions.help) {
 						web3.toHex(config.owner2),
 						web3.toHex(config.owner3),
 						web3.toHex(config.owner4),
-						web3.toHex(config.owner5)
+						web3.toHex(config.owner5),
+						web3.toHex(config.owner6),
+						web3.toHex(config.owner7)
 					],
 					config.required, config.daily, {
 						from: config.from,
@@ -91,7 +95,17 @@ if (cliOptions.help) {
 					function(err, myContract) {
 						if (!err) {
 							if (myContract.address) {
-								console.log('multisig address', myContract.address);								
+								console.log('multisig address', myContract.address);
+								var data = {
+									bytecode: bytecode,
+									abi: abi,
+									address: myContract.address
+								};
+
+								var outputFileName = __dirname + '/' + contractName + ".json";
+								console.log('saving to', outputFileName);
+								fs.writeFile(outputFileName, JSON.stringify(data), 'utf8');
+
 							}
 						} else {
 							console.log(err);

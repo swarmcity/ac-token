@@ -301,12 +301,12 @@ contract('ARCToken', function(accounts) {
       });
     });
 
-    it("token_buyer should still have 125 ARC tokens", function(done) {
-      return arctokencontract.balanceOf.call(token_buyer).then(function(balance) {
-        assert.equal(balance.valueOf(), 125);
-        done();
-      });
-    });
+    // it("token_buyer should still have 125 ARC tokens", function(done) {
+    //   return arctokencontract.balanceOf.call(token_buyer).then(function(balance) {
+    //     assert.equal(balance.valueOf(), 125);
+    //     done();
+    //   });
+    // });
   });
 
   /* When the token sale sells out - the last buyRecepient() call 
