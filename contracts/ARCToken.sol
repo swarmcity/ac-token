@@ -188,9 +188,7 @@ contract ARCToken is StandardToken, SafeMath {
     }
 
     function price() constant returns(uint) {
-        if (block.number>=startBlock && block.number<startBlock+250) return 125; //power hour
-        if (block.number<startBlock || block.number>endBlock) return 75; //default price
-        return 75 + 4*(endBlock - block.number)/(endBlock - startBlock + 1)*34/4; //crowdsale price
+        return testPrice(block.number);        
     }
 
     // price() exposed for unit tests
@@ -198,11 +196,6 @@ contract ARCToken is StandardToken, SafeMath {
         if (blockNumber>=startBlock && blockNumber<startBlock+250) return 125; //power hour
         if (blockNumber<startBlock || blockNumber>endBlock) return 75; //default price
         return 75 + 4*(endBlock - blockNumber)/(endBlock - startBlock + 1)*34/4; //crowdsale price
-    }
-
-    // // Buy entry point
-    function buy() {
-        buyRecipient(msg.sender);
     }
 
     /**
@@ -261,7 +254,7 @@ contract ARCToken is StandardToken, SafeMath {
         if(founder == 0x0 || developer == 0x0 || rewards == 0x0) throw;
         // owner/founder/developer/rewards addresses can call this function
         if (msg.sender != owner && msg.sender != founder && msg.sender != developer && msg.sender != rewards ) throw;
-        // it should only continue if endBlock has passed OR presaleEtherRaised has not reached the cap yet
+        // it should only continue if endBlock has passed OR presaleEtherRaised has reached the cap
         if (block.number <= endBlock && presaleEtherRaised < etherCap) throw;
         if (allocated) throw;
         presaleTokenSupply = totalSupply;
@@ -280,36 +273,6 @@ contract ARCToken is StandardToken, SafeMath {
     }
 
     /**
-     * Set up founder address token balance.
-     *
-     * Set up bounty pool.
-     *
-     * Security review
-     *
-     * - Integer math: ok - only called once with fixed parameters
-     *
-     * Applicable tests:
-     *
-     * - Test founder token allocation too early
-     * - Test founder token allocation on time
-     * - Test founder token allocation twice
-     *
-     */
-    // function allocateBountyAndEcosystemTokens() {
-    //     if (msg.sender!=founder) throw;
-    //     if (block.number <= endBlock) throw;
-    //     if (bountyAllocated || ecosystemAllocated) throw;
-    //     presaleTokenSupply = totalSupply;
-    //     balances[founder] = safeAdd(balances[founder], presaleTokenSupply * ecosystemAllocation / (1 ether));
-    //     totalSupply = safeAdd(totalSupply, presaleTokenSupply * ecosystemAllocation / (1 ether));
-    //     balances[founder] = safeAdd(balances[founder], bountyAllocation);
-    //     totalSupply = safeAdd(totalSupply, bountyAllocation);
-    //     bountyAllocated = true;
-    //     ecosystemAllocated = true;
-    //     AllocateBountyAndEcosystemTokens(msg.sender);
-    // }
-
-    /**
      * Emergency Stop crowdsale.
      *
      *  Applicable tests:
@@ -324,22 +287,6 @@ contract ARCToken is StandardToken, SafeMath {
     function unhalt() {
         if (msg.sender!=founder && msg.sender != developer) throw;
         halted = false;
-    }
-
-    /**
-     * Change founder address (where crowdsale ETH is being forwarded).
-     *
-     * Applicable tests:
-     *
-     * - Test founder change by hacker
-     * - Test founder change
-     * - Test founder token allocation twice
-     *
-     */
-
-    function changeMultisig(address newMultisig) {
-        if (msg.sender!=owner) throw;
-        multisig = newMultisig;
     }
 
     /**
